@@ -142,6 +142,41 @@ static void led_run(const char *color, const char *mode, float secs)
 {
     uint8_t r = 0, g = 0, b = 0;
     size_t  i;
+    
+    if (secs <= 0.0f) secs = DEFAULT_SECS;
+
+    if (!strcmp(color, "rainbow")) {
+        int steps = 100;
+        int delay_ms = (int)((secs * 1000.0f) / steps);
+        if (delay_ms < 10) delay_ms = 10;
+        steps = (int)((secs * 1000.0f) / delay_ms);
+        for (int j = 0; j <= steps; j++) {
+            float h = (float)j / steps * 6.0f;
+            int hi = (int)h;
+            float f = h - hi;
+            int q = (int)(64.0f * (1.0f - f));
+            int t = (int)(64.0f * f);
+            uint8_t rr=0, gg=0, bb=0;
+            switch(hi % 6) {
+                case 0: rr = 64; gg = t; bb = 0; break;
+                case 1: rr = q; gg = 64; bb = 0; break;
+                case 2: rr = 0; gg = 64; bb = t; break;
+                case 3: rr = 0; gg = q; bb = 64; break;
+                case 4: rr = t; gg = 0; bb = 64; break;
+                case 5: rr = 64; gg = 0; bb = q; break;
+            }
+            if (!strcmp(mode, "fade")) {
+                float intensity = ((float)j / steps < 0.5f) ? ((float)j / steps * 2.0f) : ((1.0f - (float)j / steps) * 2.0f);
+                rr = (uint8_t)(rr * intensity);
+                gg = (uint8_t)(gg * intensity);
+                bb = (uint8_t)(bb * intensity);
+            }
+            led_set(rr, gg, bb);
+            vTaskDelay(pdMS_TO_TICKS(delay_ms));
+        }
+        led_set(0, 0, 0);
+        return;
+    }
 
     for (i = 0; i < sizeof(PALETTE) / sizeof(PALETTE[0]); i++) {
         if (!strcmp(PALETTE[i].name, color)) {
