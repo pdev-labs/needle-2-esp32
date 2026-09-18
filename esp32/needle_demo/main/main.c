@@ -162,6 +162,18 @@ static void led_run(const char *color, const char *mode, float secs)
             led_set(0, 0, 0);
             vTaskDelay(pdMS_TO_TICKS(200));
         }
+    } else if (!strcmp(mode, "fade")) {
+        int steps = 100;
+        int delay_ms = (int)((secs * 1000.0f) / steps);
+        if (delay_ms < 10) delay_ms = 10;
+        steps = (int)((secs * 1000.0f) / delay_ms);
+        for (int i = 0; i <= steps; i++) {
+            float t = (float)i / steps;
+            float intensity = (t < 0.5f) ? (t * 2.0f) : ((1.0f - t) * 2.0f);
+            led_set((uint8_t)(r * intensity), (uint8_t)(g * intensity), (uint8_t)(b * intensity));
+            vTaskDelay(pdMS_TO_TICKS(delay_ms));
+        }
+        led_set(0, 0, 0);
     } else {
         led_set(r, g, b);
         vTaskDelay(pdMS_TO_TICKS((int)(secs * 1000.0f)));
